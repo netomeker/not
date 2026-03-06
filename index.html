@@ -433,6 +433,63 @@
       overflow-x: auto;
     }
 
+    .inapp-reminder {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translate(-50%, 24px);
+      width: min(92vw, 440px);
+      background: #0f172a;
+      color: #eaf2ff;
+      border: 1px solid #2d4565;
+      border-radius: 14px;
+      padding: 12px 13px;
+      box-shadow: 0 14px 34px rgba(2, 6, 23, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      z-index: 9999;
+    }
+
+    .inapp-reminder.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0);
+    }
+
+    .inapp-reminder-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .inapp-reminder-head strong {
+      font-size: 0.92rem;
+      letter-spacing: 0.01em;
+    }
+
+    .inapp-reminder-head button {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      background: #1f2f49;
+      color: #dbeafe;
+      border: 1px solid #304866;
+    }
+
+    .inapp-reminder-head button:hover {
+      background: #2b3e5d;
+    }
+
+    .inapp-reminder p {
+      margin: 0;
+      font-size: 0.84rem;
+      line-height: 1.4;
+      color: #d8e5f9;
+    }
+
     body[data-theme="dark"] {
       --bg-1: #070c18;
       --bg-2: #0a1225;
@@ -564,6 +621,16 @@
       background: #030712;
       border-color: #24364d;
       color: #d9e4f9;
+    }
+
+    body[data-theme="dark"] .inapp-reminder {
+      background: #020617;
+      border-color: #334155;
+      color: #e2e8f0;
+    }
+
+    body[data-theme="dark"] .inapp-reminder p {
+      color: #c7d2e5;
     }
 
     @media (max-width: 1020px) {
@@ -772,7 +839,7 @@
           </div>
 
           <p class="hint">
-            Dica: no celular, permita notificações do navegador e mantenha o site aberto/instalado para receber lembretes.
+            Dica: no iPhone, o push web pode exigir app na Tela de Início. Se não liberar push, o modo compatível continua funcionando com alerta dentro da página.
           </p>
         </div>
 
@@ -797,6 +864,14 @@
       </section>
     </section>
   </main>
+
+  <div id="inAppReminder" class="inapp-reminder" role="status" aria-live="polite">
+    <div class="inapp-reminder-head">
+      <strong id="inAppReminderTitle">Lembrete de execucao</strong>
+      <button id="closeInAppReminder" type="button">Fechar</button>
+    </div>
+    <p id="inAppReminderText">Hora de agir na sua campanha.</p>
+  </div>
 
   <script>
     const channelContainer = document.getElementById('channelOptions');
@@ -827,6 +902,10 @@
     const notifySoundFileInput = document.getElementById('notifySoundFile');
     const notifyIconPreview = document.getElementById('notifyIconPreview');
     const notifyStatus = document.getElementById('notifyStatus');
+    const inAppReminder = document.getElementById('inAppReminder');
+    const inAppReminderTitle = document.getElementById('inAppReminderTitle');
+    const inAppReminderText = document.getElementById('inAppReminderText');
+    const closeInAppReminderBtn = document.getElementById('closeInAppReminder');
     const enableNotifyBtn = document.getElementById('enableNotifyBtn');
     const testNotifyBtn = document.getElementById('testNotifyBtn');
     const stopNotifyBtn = document.getElementById('stopNotifyBtn');
@@ -864,6 +943,7 @@
     let customNotificationIcon = '';
     let customNotificationSound = '';
     let notificationAudioContext = null;
+    let inAppReminderTimer = null;
 
     const channelData = {
       meta: {
@@ -1039,6 +1119,22 @@
       return window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     }
 
+    function isIOSDevice() {
+      const ua = window.navigator.userAgent || '';
+      const platform = window.navigator.platform || '';
+      const iOSByUa = /iPhone|iPad|iPod/i.test(ua);
+      const iPadDesktopMode = platform === 'MacIntel' && window.navigator.maxTouchPoints > 1;
+      return iOSByUa || iPadDesktopMode;
+    }
+
+    function pushNotificationsReady() {
+      return notificationSupported() && notificationSecureContext() && Notification.permission === 'granted';
+    }
+
+    function resolveReminderMode() {
+      return pushNotificationsReady() ? 'push' : 'inapp';
+    }
+
     function normalizeClickUrl(rawValue) {
       const value = cleanText(rawValue);
       if (!value) return location.href;
@@ -1057,6 +1153,7 @@
         ? 'cash'
         : selectedSoundType;
       const soundVolume = Math.max(0, Math.min(1, (Number(notifyVolumeInput.value) || 70) / 100));
+      const deliveryMode = resolveReminderMode();
 
       return {
         title,
@@ -1067,6 +1164,7 @@
         soundType,
         soundVolume,
         customSound: customNotificationSound || '',
+        deliveryMode,
         enabled: false
       };
     }
@@ -1211,6 +1309,42 @@
       await playBuiltInNotificationSound(soundType, soundVolume);
     }
 
+    function hideInAppReminder() {
+      inAppReminder.classList.remove('show');
+      if (inAppReminderTimer) {
+        clearTimeout(inAppReminderTimer);
+        inAppReminderTimer = null;
+      }
+    }
+
+    function showInAppReminder(settings, includeRandomLine) {
+      const body = includeRandomLine
+        ? `${settings.message} ${getMotivationalLine()}`
+        : settings.message;
+
+      inAppReminderTitle.textContent = settings.title || 'Lembrete de execucao';
+      inAppReminderText.textContent = body.trim();
+      inAppReminder.classList.add('show');
+
+      if (navigator.vibrate) {
+        navigator.vibrate([120, 60, 120]);
+      }
+      void playNotificationSound(settings);
+
+      if (inAppReminderTimer) clearTimeout(inAppReminderTimer);
+      inAppReminderTimer = setTimeout(() => {
+        inAppReminder.classList.remove('show');
+      }, 6200);
+    }
+
+    function dispatchReminder(settings, includeRandomLine) {
+      if (pushNotificationsReady()) {
+        return notifyNow(settings, includeRandomLine);
+      }
+      showInAppReminder(settings, includeRandomLine);
+      return true;
+    }
+
     function notifyNow(settings, includeRandomLine) {
       if (!notificationSupported() || Notification.permission !== 'granted') return false;
 
@@ -1243,55 +1377,59 @@
     function startNotificationScheduler(settings) {
       clearNotificationTimer();
       notificationTimer = setInterval(() => {
-        notifyNow(settings, true);
+        const runtimeSettings = {
+          ...settings,
+          ...getNotificationFormSettings(),
+          enabled: true,
+          deliveryMode: resolveReminderMode()
+        };
+        dispatchReminder(runtimeSettings, true);
       }, settings.intervalMinutes * 60 * 1000);
     }
 
     function persistNotificationDraft() {
       const previous = loadNotificationSettings() || {};
       const draft = getNotificationFormSettings();
-      draft.enabled = Boolean(
-        previous.enabled &&
-        notificationSupported() &&
-        Notification.permission === 'granted'
-      );
+      draft.enabled = Boolean(previous.enabled);
+      draft.deliveryMode = resolveReminderMode();
       saveNotificationSettings(draft);
     }
 
     async function activateNotifications(sendInstantly) {
-      if (!notificationSupported()) {
-        setNotificationStatus('Este navegador nao suporta notificacoes.');
-        return;
-      }
-
-      if (!notificationSecureContext()) {
-        setNotificationStatus('Notificacoes exigem HTTPS ou localhost.');
-        return;
-      }
-
-      let permission = Notification.permission;
-      if (permission === 'default') {
-        permission = await Notification.requestPermission();
-      }
-
-      if (permission !== 'granted') {
-        setNotificationStatus('Permissao negada ou bloqueada.');
-        return;
-      }
-
       const settings = getNotificationFormSettings();
+      let reminderMode = 'inapp';
+
+      if (notificationSupported() && notificationSecureContext()) {
+        let permission = Notification.permission;
+        if (permission === 'default') {
+          permission = await Notification.requestPermission();
+        }
+        if (permission === 'granted') {
+          reminderMode = 'push';
+        }
+      }
+
+      settings.deliveryMode = reminderMode;
       settings.enabled = true;
       saveNotificationSettings(settings);
       startNotificationScheduler(settings);
-      setNotificationStatus(`Ativas a cada ${settings.intervalMinutes} minutos.`);
+
+      if (reminderMode === 'push') {
+        setNotificationStatus(`Push ativo a cada ${settings.intervalMinutes} minutos.`);
+      } else if (isIOSDevice()) {
+        setNotificationStatus('Modo iPhone ativo: lembrete no app. Para push, instale na Tela de Inicio e permita notificacoes.');
+      } else {
+        setNotificationStatus(`Modo compativel ativo a cada ${settings.intervalMinutes} minutos (lembrete dentro da pagina).`);
+      }
 
       if (sendInstantly) {
-        notifyNow(settings, true);
+        dispatchReminder(settings, true);
       }
     }
 
     function pauseNotifications() {
       clearNotificationTimer();
+      hideInAppReminder();
       const settings = loadNotificationSettings() || getNotificationFormSettings();
       settings.enabled = false;
       saveNotificationSettings(settings);
@@ -1366,13 +1504,18 @@
     async function sendTestNotification() {
       const loaded = loadNotificationSettings() || getNotificationFormSettings();
       await activateNotifications(false);
-      if (notificationSupported() && Notification.permission === 'granted') {
-        notifyNow({
-          ...loaded,
-          ...getNotificationFormSettings(),
-          icon: customNotificationIcon || loaded.icon || defaultMoneyIcon
-        }, true);
+      const runtimeSettings = {
+        ...loaded,
+        ...getNotificationFormSettings(),
+        icon: customNotificationIcon || loaded.icon || defaultMoneyIcon,
+        deliveryMode: resolveReminderMode(),
+        enabled: true
+      };
+      dispatchReminder(runtimeSettings, true);
+      if (runtimeSettings.deliveryMode === 'push') {
         setNotificationStatus('Notificacao de teste enviada.');
+      } else {
+        setNotificationStatus('Lembrete de teste exibido no modo compativel.');
       }
     }
 
@@ -1380,25 +1523,29 @@
       const saved = loadNotificationSettings();
       applyNotificationSettingsToForm(saved);
 
-      if (!notificationSupported()) {
-        setNotificationStatus('Navegador sem suporte a notificacoes.');
-        return;
-      }
-
-      if (!notificationSecureContext()) {
-        setNotificationStatus('Use HTTPS/localhost para ativar notificacoes.');
-        return;
-      }
-
-      if (saved && saved.enabled && Notification.permission === 'granted') {
-        const merged = { ...saved, ...getNotificationFormSettings(), enabled: true };
+      const runtimeMode = resolveReminderMode();
+      if (saved && saved.enabled) {
+        const merged = {
+          ...saved,
+          ...getNotificationFormSettings(),
+          enabled: true,
+          deliveryMode: runtimeMode
+        };
         saveNotificationSettings(merged);
         startNotificationScheduler(merged);
-        setNotificationStatus(`Ativas a cada ${merged.intervalMinutes} minutos.`);
-      } else if (Notification.permission === 'denied') {
-        setNotificationStatus('Permissao bloqueada no navegador.');
+        if (runtimeMode === 'push') {
+          setNotificationStatus(`Push ativo a cada ${merged.intervalMinutes} minutos.`);
+        } else if (isIOSDevice()) {
+          setNotificationStatus('Modo iPhone ativo: lembrete no app. Para push, use Tela de Inicio + permissao.');
+        } else {
+          setNotificationStatus(`Modo compativel ativo a cada ${merged.intervalMinutes} minutos.`);
+        }
+      } else if (runtimeMode === 'push') {
+        setNotificationStatus('Notificacoes push prontas para ativar.');
+      } else if (isIOSDevice()) {
+        setNotificationStatus('iPhone detectado: modo compativel pronto (lembrete dentro da pagina).');
       } else {
-        setNotificationStatus('Notificacoes prontas para ativar.');
+        setNotificationStatus('Modo compativel pronto para ativar.');
       }
 
       updateNotificationPreview(customNotificationIcon || (saved && saved.icon) || defaultMoneyIcon);
@@ -1741,6 +1888,7 @@
     notifyIconInput.addEventListener('change', handleNotificationIconChange);
     notifySoundFileInput.addEventListener('change', handleNotificationSoundFileChange);
     resetNotifyIconBtn.addEventListener('click', resetNotificationIcon);
+    closeInAppReminderBtn.addEventListener('click', hideInAppReminder);
     notifySoundTypeInput.addEventListener('change', handleNotificationSoundTypeChange);
     notifyVolumeInput.addEventListener('input', () => {
       updateNotifyVolumeLabel();
