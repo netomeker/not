@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campanha Certeira | Gerador de Anúncios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-1: #f5f7fb;
+      --bg-2: #eef3ff;
+      --paper: #ffffff;
+      --ink: #111827;
+      --muted: #5f6b7e;
+      --line: #dfe5ee;
+      --brand: #0f766e;
+      --brand-2: #065f46;
+      --accent: #fb8500;
+      --accent-2: #e76f00;
+      --ring: rgba(15, 118, 110, 0.2);
+      --shadow: 0 14px 36px rgba(17, 24, 39, 0.1);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 9% 12%, #d8f3dc 0, transparent 26%),
+        radial-gradient(circle at 93% 14%, #ffd6a5 0, transparent 23%),
+        linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero {
+      background: linear-gradient(130deg, #0f172a 0%, #182a4b 52%, #0f766e 100%);
+      border-radius: var(--radius);
+      padding: 22px;
+      color: #f8fafc;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hero h1 {
+      font-family: "Sora", sans-serif;
+      font-size: clamp(1.3rem, 1.02rem + 1.2vw, 2rem);
+      margin-bottom: 8px;
+    }
+
+    .hero p {
+      color: #d8e3f2;
+      line-height: 1.45;
+      max-width: 790px;
+    }
+
+    .hero-badge {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .theme-toggle {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 999px;
+      color: #f8fafc;
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--paper);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid #edf1f7;
+    }
+
+    .controls {
+      padding: 16px;
+      position: sticky;
+      top: 18px;
+      height: fit-content;
+    }
+
+    .section {
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 0.77rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      color: #1f2937;
+    }
+
+    .segmented {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 10px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      background: #fff;
+      min-height: 66px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .chip input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .chip strong {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .chip span {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.2;
+    }
+
+    .chip:hover {
+      border-color: #afbccf;
+      transform: translateY(-1px);
+    }
+
+    .chip.active {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--ring);
+      background: #f8fffc;
+    }
+
+    .field,
+    .field-grid {
+      margin-bottom: 10px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      color: #263346;
+      margin-bottom: 5px;
+      font-weight: 700;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #ced8e8;
+      border-radius: 11px;
+      padding: 10px 11px;
+      font: inherit;
+      font-size: 0.92rem;
+      color: var(--ink);
+      background: #fbfcff;
+      outline: none;
+      transition: 0.2s border-color, 0.2s box-shadow;
+    }
+
+    textarea {
+      min-height: 105px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+
+    .controls-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 11px;
+      padding: 10px 13px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-size: 0.88rem;
+    }
+
+    #generateBtn {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    #generateBtn:hover {
+      background: var(--brand-2);
+      transform: translateY(-1px);
+    }
+
+    #variationBtn {
+      background: var(--accent);
+      color: #111827;
+    }
+
+    #variationBtn:hover {
+      background: var(--accent-2);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    #presetBtn,
+    #copyBtn {
+      background: #e9eef6;
+      color: #1f2937;
+    }
+
+    #presetBtn:hover,
+    #copyBtn:hover {
+      background: #dde6f2;
+    }
+
+    .notification-box {
+      border: 1px solid #d8e5f2;
+      background: linear-gradient(180deg, #f7fbff 0%, #f4faf8 100%);
+      border-radius: 13px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .notification-box .field:last-of-type {
+      margin-bottom: 6px;
+    }
+
+    .notification-box input[type="file"] {
+      background: #ffffff;
+      padding: 8px 10px;
+    }
+
+    .notif-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ecf8f5;
+      border: 1px solid #cfeee6;
+      padding: 8px 10px;
+      border-radius: 10px;
+      margin: 8px 0;
+    }
+
+    .notif-preview img {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      object-fit: cover;
+      background: #fff;
+      border: 1px solid #cde5df;
+      flex-shrink: 0;
+    }
+
+    .notif-preview span {
+      font-size: 0.78rem;
+      color: #1f2937;
+      line-height: 1.3;
+      font-weight: 700;
+    }
+
+    .notify-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    #enableNotifyBtn {
+      background: #0ea5a3;
+      color: #ffffff;
+    }
+
+    #enableNotifyBtn:hover {
+      background: #0b8b88;
+    }
+
+    #testNotifyBtn {
+      background: #f59e0b;
+      color: #111827;
+    }
+
+    #testNotifyBtn:hover {
+      background: #d97706;
+      color: #ffffff;
+    }
+
+    #stopNotifyBtn {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    #stopNotifyBtn:hover {
+      background: #fecaca;
+    }
+
+    #resetNotifyIconBtn {
+      background: #e2e8f0;
+      color: #1f2937;
+    }
+
+    #resetNotifyIconBtn:hover {
+      background: #cfd9e6;
+    }
+
+    .hint {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.3;
+    }
+
+    .result {
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+      min-height: 520px;
+    }
+
+    .result-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .result-title {
+      font-family: "Sora", sans-serif;
+      font-size: 1.05rem;
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      background: #f1f5f9;
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid #d6e0ed;
+      color: #334155;
+      font-size: 0.77rem;
+      font-weight: 700;
+    }
+
+    .output {
+      background: #0b1324;
+      color: #e6ecfb;
+      border-radius: 12px;
+      border: 1px solid #1f2f4a;
+      padding: 14px;
+      min-height: 440px;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    body[data-theme="dark"] {
+      --bg-1: #070c18;
+      --bg-2: #0a1225;
+      --paper: #0f1a2d;
+      --ink: #e2e8f0;
+      --muted: #99a9be;
+      --line: #334155;
+      --brand: #22c55e;
+      --brand-2: #16a34a;
+      --accent: #f59e0b;
+      --accent-2: #d97706;
+      --ring: rgba(34, 197, 94, 0.2);
+      --shadow: 0 18px 40px rgba(2, 6, 23, 0.6);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(24, 84, 58, 0.6) 0, transparent 28%),
+        radial-gradient(circle at 90% 12%, rgba(120, 53, 15, 0.45) 0, transparent 26%),
+        linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+    }
+
+    body[data-theme="dark"] .hero {
+      background: linear-gradient(130deg, #020617 0%, #172554 55%, #14532d 100%);
+      color: #e2e8f0;
+    }
+
+    body[data-theme="dark"] .hero p {
+      color: #c7d3e6;
+    }
+
+    body[data-theme="dark"] .hero-badge {
+      background: rgba(15, 23, 42, 0.5);
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+
+    body[data-theme="dark"] .theme-toggle {
+      background: rgba(15, 23, 42, 0.5);
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+
+    body[data-theme="dark"] .theme-toggle:hover {
+      background: rgba(30, 41, 59, 0.8);
+    }
+
+    body[data-theme="dark"] .panel {
+      border-color: #1e293b;
+    }
+
+    body[data-theme="dark"] .section-title,
+    body[data-theme="dark"] label {
+      color: #c8d5ea;
+    }
+
+    body[data-theme="dark"] .chip {
+      background: #0b1322;
+      border-color: #334155;
+    }
+
+    body[data-theme="dark"] .chip strong {
+      color: #e2e8f0;
+    }
+
+    body[data-theme="dark"] .chip:hover {
+      border-color: #4b5f7f;
+    }
+
+    body[data-theme="dark"] .chip.active {
+      background: #10261f;
+    }
+
+    body[data-theme="dark"] input[type="text"],
+    body[data-theme="dark"] input[type="number"],
+    body[data-theme="dark"] select,
+    body[data-theme="dark"] textarea {
+      background: #0b1322;
+      border-color: #334155;
+      color: #e2e8f0;
+    }
+
+    body[data-theme="dark"] input::placeholder,
+    body[data-theme="dark"] textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    body[data-theme="dark"] .notification-box {
+      background: linear-gradient(180deg, #0c172b 0%, #102030 100%);
+      border-color: #26425f;
+    }
+
+    body[data-theme="dark"] .notification-box input[type="file"] {
+      background: #0b1322;
+    }
+
+    body[data-theme="dark"] .notif-preview {
+      background: #0f2133;
+      border-color: #2a3f57;
+    }
+
+    body[data-theme="dark"] .notif-preview img {
+      border-color: #34526f;
+    }
+
+    body[data-theme="dark"] .notif-preview span {
+      color: #d6e4f5;
+    }
+
+    body[data-theme="dark"] .meta-pill {
+      background: #0f1d33;
+      border-color: #2f435f;
+      color: #c6d7ef;
+    }
+
+    body[data-theme="dark"] #presetBtn,
+    body[data-theme="dark"] #copyBtn,
+    body[data-theme="dark"] #resetNotifyIconBtn {
+      background: #1e293b;
+      color: #e2e8f0;
+    }
+
+    body[data-theme="dark"] #presetBtn:hover,
+    body[data-theme="dark"] #copyBtn:hover,
+    body[data-theme="dark"] #resetNotifyIconBtn:hover {
+      background: #334155;
+    }
+
+    body[data-theme="dark"] .hint {
+      color: #9fb0c7;
+    }
+
+    body[data-theme="dark"] .output {
+      background: #030712;
+      border-color: #24364d;
+      color: #d9e4f9;
+    }
+
+    @media (max-width: 1020px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      .hero {
+        padding: 16px;
+      }
+
+      .hero-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .panel {
+        border-radius: 12px;
+      }
+
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .notification-box {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <h1>Campanha Certeira</h1>
+        <p>
+          Gere uma campanha completa para tráfego pago em poucos cliques: estrutura de campanha,
+          segmentação, copies (A/B), headlines, criativos e plano de teste de 7 dias.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <div class="hero-badge">Feito para afiliados e infoprodutores</div>
+        <button id="themeToggleBtn" class="theme-toggle" type="button" aria-pressed="false">
+          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleLabel">Modo dia</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="panel controls">
+        <div class="section">
+          <div class="section-title">Canal</div>
+          <div class="segmented" id="channelOptions">
+            <label class="chip active">
+              <input type="radio" name="channel" value="meta" checked>
+              <strong>Meta Ads</strong>
+              <span>Facebook + Instagram</span>
+            </label>
+            <label class="chip">
+              <input type="radio" name="channel" value="tiktok">
+              <strong>TikTok Ads</strong>
+              <span>Criativo e retenção</span>
+            </label>
+            <label class="chip">
+              <input type="radio" name="channel" value="google">
+              <strong>Google Ads</strong>
+              <span>Intenção de busca</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Modo de Oferta</div>
+          <div class="segmented" id="modeOptions">
+            <label class="chip active">
+              <input type="radio" name="mode" value="white" checked>
+              <strong>White Hat</strong>
+              <span>Profissional e confiável</span>
+            </label>
+            <label class="chip">
+              <input type="radio" name="mode" value="black">
+              <strong>Black Hat</strong>
+              <span>Agressivo e emocional</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="objective">Objetivo da campanha</label>
+          <select id="objective">
+            <option value="conversoes">Conversões (venda)</option>
+            <option value="leads">Geração de Leads</option>
+            <option value="mensagens">Mensagens / WhatsApp</option>
+            <option value="trafego">Tráfego para página</option>
+          </select>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="budget">Orçamento diário (R$)</label>
+            <input id="budget" type="number" min="20" step="10" value="120">
+          </div>
+          <div class="field">
+            <label for="ticket">Ticket médio (R$)</label>
+            <input id="ticket" type="number" min="30" step="10" value="297">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="productName">Nome do produto/serviço</label>
+          <input id="productName" type="text" placeholder="Ex: Método Inglês de Verdade">
+        </div>
+
+        <div class="field">
+          <label for="description">Descrição do produto/serviço</label>
+          <textarea id="description" placeholder="Explique o que é, para quem, promessa principal, formato e diferenciais."></textarea>
+        </div>
+
+        <div class="field">
+          <label for="audience">Público-alvo (opcional)</label>
+          <input id="audience" type="text" placeholder="Ex: Mulheres 25-45 que querem falar inglês para viagem">
+        </div>
+
+        <div class="field">
+          <label for="proof">Provas / autoridade (opcional)</label>
+          <input id="proof" type="text" placeholder="Ex: +8 mil alunos, 4.9 de avaliação, 12 anos de mercado">
+        </div>
+
+        <div class="section notification-box">
+          <div class="section-title">Notificações de motivação (mobile e desktop)</div>
+
+          <div class="field">
+            <label for="notifyTitle">Título da notificação</label>
+            <input id="notifyTitle" type="text" value="Foco total na sua campanha">
+          </div>
+
+          <div class="field">
+            <label for="notifyMessage">Mensagem personalizada</label>
+            <textarea id="notifyMessage" placeholder="Ex: Sem ideia? Só vai. Sobe criativo, testa e otimiza.">Sem ideia? Só vai. Sobe criativo, testa e otimiza.</textarea>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="notifyInterval">Intervalo</label>
+              <select id="notifyInterval">
+                <option value="10">A cada 10 minutos</option>
+                <option value="15">A cada 15 minutos</option>
+                <option value="30" selected>A cada 30 minutos</option>
+                <option value="45">A cada 45 minutos</option>
+                <option value="60">A cada 60 minutos</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="notifyClickUrl">Link ao clicar</label>
+              <input id="notifyClickUrl" type="text" placeholder="Opcional (ex: https://seusite.com/painel)">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="notifyIcon">Imagem da notificação</label>
+            <input id="notifyIcon" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="notifySoundType">Som da notificacao</label>
+              <select id="notifySoundType">
+                <option value="cash" selected>Dinheiro (padrao)</option>
+                <option value="ping">Ping curto</option>
+                <option value="none">Sem som</option>
+                <option value="custom">Audio personalizado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="notifyVolume">Volume (<span id="notifyVolumeValue">70%</span>)</label>
+              <input id="notifyVolume" type="range" min="0" max="100" step="5" value="70">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="notifySoundFile">Audio personalizado (opcional)</label>
+            <input id="notifySoundFile" type="file" accept="audio/*">
+          </div>
+
+          <div class="notif-preview">
+            <img id="notifyIconPreview" alt="Prévia do ícone da notificação">
+            <span id="notifyStatus">Notificações desativadas.</span>
+          </div>
+
+          <div class="notify-actions">
+            <button id="enableNotifyBtn" type="button">Ativar notificações automáticas</button>
+            <button id="testNotifyBtn" type="button">Testar notificação agora</button>
+            <button id="stopNotifyBtn" type="button">Pausar notificações</button>
+            <button id="resetNotifyIconBtn" type="button">Usar ícone padrão de dinheiro</button>
+          </div>
+
+          <p class="hint">
+            Dica: no celular, permita notificações do navegador e mantenha o site aberto/instalado para receber lembretes.
+          </p>
+        </div>
+
+        <div class="controls-actions">
+          <button id="generateBtn" type="button">Gerar Campanha Certeira</button>
+          <button id="variationBtn" type="button">Gerar Novas Variações</button>
+          <button id="presetBtn" type="button">Preset Facebook Agressivo</button>
+          <button id="copyBtn" type="button">Copiar Planejamento</button>
+        </div>
+
+        <p class="hint">
+          Se você preencher só a descrição, a ferramenta completa o resto de forma automática.
+        </p>
+      </aside>
+
+      <section class="panel result">
+        <div class="result-top">
+          <h2 class="result-title">Plano de Campanha Gerado</h2>
+          <div class="meta-pill" id="statusPill">Pronto para gerar</div>
+        </div>
+        <div class="output" id="output">Preencha os campos e clique em "Gerar Campanha Certeira".</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const channelContainer = document.getElementById('channelOptions');
+    const modeContainer = document.getElementById('modeOptions');
+    const output = document.getElementById('output');
+    const statusPill = document.getElementById('statusPill');
+
+    const descriptionInput = document.getElementById('description');
+    const productNameInput = document.getElementById('productName');
+    const audienceInput = document.getElementById('audience');
+    const proofInput = document.getElementById('proof');
+    const objectiveInput = document.getElementById('objective');
+    const budgetInput = document.getElementById('budget');
+    const ticketInput = document.getElementById('ticket');
+
+    const generateBtn = document.getElementById('generateBtn');
+    const variationBtn = document.getElementById('variationBtn');
+    const presetBtn = document.getElementById('presetBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const notifyTitleInput = document.getElementById('notifyTitle');
+    const notifyMessageInput = document.getElementById('notifyMessage');
+    const notifyIntervalInput = document.getElementById('notifyInterval');
+    const notifyClickUrlInput = document.getElementById('notifyClickUrl');
+    const notifyIconInput = document.getElementById('notifyIcon');
+    const notifySoundTypeInput = document.getElementById('notifySoundType');
+    const notifyVolumeInput = document.getElementById('notifyVolume');
+    const notifyVolumeValue = document.getElementById('notifyVolumeValue');
+    const notifySoundFileInput = document.getElementById('notifySoundFile');
+    const notifyIconPreview = document.getElementById('notifyIconPreview');
+    const notifyStatus = document.getElementById('notifyStatus');
+    const enableNotifyBtn = document.getElementById('enableNotifyBtn');
+    const testNotifyBtn = document.getElementById('testNotifyBtn');
+    const stopNotifyBtn = document.getElementById('stopNotifyBtn');
+    const resetNotifyIconBtn = document.getElementById('resetNotifyIconBtn');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeToggleIcon = document.getElementById('themeToggleIcon');
+    const themeToggleLabel = document.getElementById('themeToggleLabel');
+
+    const themeStorageKey = 'campanha_certeira_theme_v1';
+    const notificationStorageKey = 'campanha_certeira_notify_v1';
+    const defaultMoneyIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+        <defs>
+          <linearGradient id="bag" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f6c453"/>
+            <stop offset="100%" stop-color="#e59f1f"/>
+          </linearGradient>
+        </defs>
+        <circle cx="64" cy="64" r="62" fill="#0f172a"/>
+        <path d="M44 33h40l-8 14H52z" fill="#d97706"/>
+        <path d="M64 42c-20 0-33 14-33 35 0 20 13 33 33 33s33-13 33-33c0-21-13-35-33-35z" fill="url(#bag)"/>
+        <circle cx="64" cy="77" r="16" fill="#fff2cc"/>
+        <path d="M64 64v26M56 72h10c4 0 6-2 6-5s-3-5-7-5h-8c-3 0-5 2-5 5s2 5 5 5h16c4 0 6 2 6 5s-2 5-6 5H58" stroke="#12643f" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>`
+    )}`;
+    const motivationalMessages = [
+      'Sem ideia? So vai. Publica, mede e melhora.',
+      'Quem testa mais, aprende mais rapido. Sobe mais um criativo.',
+      'Nao espere o anuncio perfeito. Escala quem executa.',
+      'Seu proximo lead pode vir no proximo teste. Continua.',
+      'Disciplina no trafego vence talento sem rotina.'
+    ];
+
+    let notificationTimer = null;
+    let customNotificationIcon = '';
+    let customNotificationSound = '';
+    let notificationAudioContext = null;
+
+    const channelData = {
+      meta: {
+        label: 'Meta Ads (Facebook/Instagram)',
+        structure: 'Campanha de Conversão -> 3 conjuntos (frio, lookalike, remarketing) -> 3 anúncios por conjunto',
+        cta: 'Toque em "Saiba Mais" e entre agora.',
+        kpi: {
+          ctr: '1.4% a 2.8%',
+          cpc: 'R$ 1,20 a R$ 3,50',
+          cpa: 'R$ 25 a R$ 95'
+        }
+      },
+      tiktok: {
+        label: 'TikTok Ads',
+        structure: 'Campanha de Conversão -> 2 conjuntos amplos + 1 conjunto de engajados -> 4 vídeos curtos',
+        cta: 'Arraste e veja os detalhes agora.',
+        kpi: {
+          ctr: '1.1% a 2.4%',
+          cpc: 'R$ 0,90 a R$ 2,80',
+          cpa: 'R$ 22 a R$ 80'
+        }
+      },
+      google: {
+        label: 'Google Ads',
+        structure: 'Campanha de Pesquisa -> grupos por intenção (comprar, comparar, solução) -> extensões completas',
+        cta: 'Clique para acessar a página oficial.',
+        kpi: {
+          ctr: '3.5% a 8%',
+          cpc: 'R$ 1,80 a R$ 6,50',
+          cpa: 'R$ 30 a R$ 120'
+        }
+      }
+    };
+
+    const nicheLibrary = [
+      {
+        key: 'ingles',
+        terms: ['ingl', 'idioma', 'fluência', 'fluencia'],
+        defaultName: 'Método de Inglês',
+        audience: 'adultos iniciantes que querem falar inglês com confiança',
+        promise: 'falar inglês no dia a dia sem travar',
+        mechanism: 'aulas práticas + plano de conversação guiado',
+        pain: 'estudar há anos e continuar sem conseguir falar',
+        proof: '+8 mil alunos, metodologia aplicada em rotina real',
+        interests: ['Duolingo', 'Cambridge English', 'Intercâmbio', 'Turismo internacional']
+      },
+      {
+        key: 'trafego',
+        terms: ['tráfego', 'trafego', 'ads', 'facebook', 'anúncio', 'anuncio'],
+        defaultName: 'Método de Tráfego Pago',
+        audience: 'afiliados e infoprodutores que precisam de escala previsível',
+        promise: 'gerar vendas consistentes com campanhas simples',
+        mechanism: 'framework de teste rápido + otimização de criativos',
+        pain: 'investir em anúncio sem retorno e sem clareza do que ajustar',
+        proof: 'cases reais com ROAS acima de 3 em múltiplos nichos',
+        interests: ['Marketing digital', 'Meta Ads', 'Funil de vendas', 'Copywriting']
+      },
+      {
+        key: 'emagrecimento',
+        terms: ['emagrec', 'dieta', 'peso', 'fitness', 'treino'],
+        defaultName: 'Programa de Emagrecimento',
+        audience: 'pessoas que querem emagrecer com rotina possível',
+        promise: 'reduzir medidas sem dieta extrema',
+        mechanism: 'plano alimentar simples + estratégia progressiva',
+        pain: 'começar e desistir por falta de resultado consistente',
+        proof: 'depoimentos antes/depois e acompanhamento contínuo',
+        interests: ['Nutrição', 'Treino em casa', 'Saúde e bem-estar', 'Receitas fitness']
+      },
+      {
+        key: 'financas',
+        terms: ['invest', 'finan', 'renda', 'dinheiro', 'bolsa'],
+        defaultName: 'Treinamento de Finanças',
+        audience: 'pessoas que querem organizar o dinheiro e construir patrimônio',
+        promise: 'assumir controle financeiro com estratégia prática',
+        mechanism: 'método de organização + plano de ação mensal',
+        pain: 'ganhar dinheiro e terminar o mês sem evolução',
+        proof: 'alunos com evolução real de reserva e controle',
+        interests: ['Educação financeira', 'Investimentos', 'Renda extra', 'Planejamento']
+      },
+      {
+        key: 'concurso',
+        terms: ['concurso', 'enem', 'oab', 'prova', 'estudo'],
+        defaultName: 'Mentoria de Aprovação',
+        audience: 'estudantes que querem desempenho alto em prova',
+        promise: 'acelerar a aprovação com método objetivo',
+        mechanism: 'cronograma inteligente + revisão ativa',
+        pain: 'estudar muito e não converter em nota',
+        proof: 'histórico de aprovados e plano validado',
+        interests: ['Concurso público', 'Técnicas de estudo', 'Produtividade', 'Aprovação']
+      }
+    ];
+
+    function cleanText(text) {
+      return (text || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function titleCase(text) {
+      return text
+        .split(' ')
+        .filter(Boolean)
+        .map((word) => word[0].toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+
+    function randomItem(items) {
+      return items[Math.floor(Math.random() * items.length)];
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function updateChipStates(container) {
+      container.querySelectorAll('.chip').forEach((chip) => {
+        const input = chip.querySelector('input');
+        chip.classList.toggle('active', input.checked);
+      });
+    }
+
+    function bindChipGroup(container) {
+      container.querySelectorAll('.chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const input = chip.querySelector('input');
+          input.checked = true;
+          updateChipStates(container);
+        });
+      });
+    }
+
+    function parseStoredJson(value) {
+      if (!value) return null;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    }
+
+    function applyTheme(theme) {
+      const safeTheme = theme === 'dark' ? 'dark' : 'light';
+      const darkMode = safeTheme === 'dark';
+      document.body.setAttribute('data-theme', safeTheme);
+      themeToggleBtn.setAttribute('aria-pressed', String(darkMode));
+      themeToggleIcon.textContent = darkMode ? '☀️' : '🌙';
+      themeToggleLabel.textContent = darkMode ? 'Modo noite' : 'Modo dia';
+      themeToggleBtn.title = darkMode ? 'Trocar para modo dia' : 'Trocar para modo noite';
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+      localStorage.setItem(themeStorageKey, nextTheme);
+    }
+
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem(themeStorageKey);
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        applyTheme(savedTheme);
+        return;
+      }
+
+      const prefersDark = typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      applyTheme(prefersDark ? 'dark' : 'light');
+    }
+
+    function notificationSupported() {
+      return typeof window !== 'undefined' && 'Notification' in window;
+    }
+
+    function notificationSecureContext() {
+      return window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    }
+
+    function normalizeClickUrl(rawValue) {
+      const value = cleanText(rawValue);
+      if (!value) return location.href;
+      if (/^https?:\/\//i.test(value)) return value;
+      if (value.startsWith('/')) return `${location.origin}${value}`;
+      return location.href;
+    }
+
+    function getNotificationFormSettings() {
+      const intervalMinutes = Math.max(Number(notifyIntervalInput.value) || 30, 5);
+      const title = cleanText(notifyTitleInput.value) || 'Foco total na sua campanha';
+      const message = cleanText(notifyMessageInput.value) || 'Sem ideia? So vai. Sobe criativo, testa e otimiza.';
+      const clickUrl = normalizeClickUrl(notifyClickUrlInput.value);
+      const selectedSoundType = notifySoundTypeInput.value || 'cash';
+      const soundType = selectedSoundType === 'custom' && !customNotificationSound
+        ? 'cash'
+        : selectedSoundType;
+      const soundVolume = Math.max(0, Math.min(1, (Number(notifyVolumeInput.value) || 70) / 100));
+
+      return {
+        title,
+        message,
+        intervalMinutes,
+        clickUrl,
+        icon: customNotificationIcon || defaultMoneyIcon,
+        soundType,
+        soundVolume,
+        customSound: customNotificationSound || '',
+        enabled: false
+      };
+    }
+
+    function saveNotificationSettings(settings) {
+      try {
+        localStorage.setItem(notificationStorageKey, JSON.stringify(settings));
+        return true;
+      } catch {
+        setNotificationStatus('Nao foi possivel salvar todas as preferencias de notificacao.');
+        return false;
+      }
+    }
+
+    function loadNotificationSettings() {
+      return parseStoredJson(localStorage.getItem(notificationStorageKey));
+    }
+
+    function setNotificationStatus(text) {
+      notifyStatus.textContent = text;
+    }
+
+    function updateNotificationPreview(iconSrc) {
+      notifyIconPreview.src = iconSrc || defaultMoneyIcon;
+    }
+
+    function applyNotificationSettingsToForm(settings) {
+      if (!settings) {
+        customNotificationSound = '';
+        notifySoundTypeInput.value = 'cash';
+        notifyVolumeInput.value = '70';
+        updateNotifyVolumeLabel();
+        updateNotificationPreview(defaultMoneyIcon);
+        return;
+      }
+
+      notifyTitleInput.value = settings.title || notifyTitleInput.value;
+      notifyMessageInput.value = settings.message || notifyMessageInput.value;
+      notifyIntervalInput.value = String(settings.intervalMinutes || 30);
+      notifyClickUrlInput.value = settings.clickUrl && settings.clickUrl !== location.href ? settings.clickUrl : '';
+      customNotificationIcon = settings.icon || '';
+      customNotificationSound = settings.customSound || '';
+      const resolvedSoundType = settings.soundType === 'custom' && !customNotificationSound
+        ? 'cash'
+        : (settings.soundType || 'cash');
+      notifySoundTypeInput.value = resolvedSoundType;
+      notifyVolumeInput.value = String(Math.round((settings.soundVolume ?? 0.7) * 100));
+      updateNotifyVolumeLabel();
+      updateNotificationPreview(customNotificationIcon || defaultMoneyIcon);
+    }
+
+    function clearNotificationTimer() {
+      if (notificationTimer) {
+        clearInterval(notificationTimer);
+        notificationTimer = null;
+      }
+    }
+
+    function getMotivationalLine() {
+      return randomItem(motivationalMessages);
+    }
+
+    function updateNotifyVolumeLabel() {
+      notifyVolumeValue.textContent = `${notifyVolumeInput.value}%`;
+    }
+
+    function getNotificationAudioContext() {
+      if (notificationAudioContext) return notificationAudioContext;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      notificationAudioContext = new AudioContextClass();
+      return notificationAudioContext;
+    }
+
+    async function ensureAudioContextReady() {
+      const audioCtx = getNotificationAudioContext();
+      if (!audioCtx) return null;
+      if (audioCtx.state === 'suspended') {
+        try {
+          await audioCtx.resume();
+        } catch {
+          return null;
+        }
+      }
+      return audioCtx;
+    }
+
+    function scheduleTone(audioCtx, frequency, startAt, duration, gainValue, waveType) {
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = waveType || 'sine';
+      oscillator.frequency.value = frequency;
+      gainNode.gain.setValueAtTime(0.0001, startAt);
+      gainNode.gain.exponentialRampToValueAtTime(Math.max(gainValue, 0.001), startAt + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start(startAt);
+      oscillator.stop(startAt + duration);
+    }
+
+    async function playBuiltInNotificationSound(kind, volume) {
+      if (kind === 'none') return;
+      const audioCtx = await ensureAudioContextReady();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime + 0.01;
+      const safeVolume = Math.max(0.03, Math.min(volume, 1)) * 0.35;
+
+      if (kind === 'ping') {
+        scheduleTone(audioCtx, 1140, now, 0.22, safeVolume, 'sine');
+        return;
+      }
+
+      scheduleTone(audioCtx, 880, now, 0.09, safeVolume, 'triangle');
+      scheduleTone(audioCtx, 1320, now + 0.08, 0.09, safeVolume * 0.9, 'triangle');
+      scheduleTone(audioCtx, 1050, now + 0.16, 0.15, safeVolume * 0.8, 'sine');
+    }
+
+    async function playCustomNotificationSound(audioUrl, volume) {
+      if (!audioUrl) return false;
+      const audio = new Audio(audioUrl);
+      audio.volume = Math.max(0, Math.min(volume, 1));
+      try {
+        await audio.play();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    async function playNotificationSound(settings) {
+      const soundType = settings.soundType || 'cash';
+      const soundVolume = settings.soundVolume ?? 0.7;
+      if (soundType === 'none' || soundVolume <= 0) return;
+
+      if (soundType === 'custom' && settings.customSound) {
+        const ok = await playCustomNotificationSound(settings.customSound, soundVolume);
+        if (ok) return;
+      }
+
+      await playBuiltInNotificationSound(soundType, soundVolume);
+    }
+
+    function notifyNow(settings, includeRandomLine) {
+      if (!notificationSupported() || Notification.permission !== 'granted') return false;
+
+      const body = includeRandomLine
+        ? `${settings.message} ${getMotivationalLine()}`
+        : settings.message;
+
+      void playNotificationSound(settings);
+
+      const notification = new Notification(settings.title, {
+        body: body.trim(),
+        icon: settings.icon || defaultMoneyIcon,
+        badge: settings.icon || defaultMoneyIcon,
+        tag: 'campanha-certeira-motivation',
+        renotify: true,
+        vibrate: [150, 60, 120]
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        if (settings.clickUrl) {
+          window.location.href = settings.clickUrl;
+        }
+        notification.close();
+      };
+
+      return true;
+    }
+
+    function startNotificationScheduler(settings) {
+      clearNotificationTimer();
+      notificationTimer = setInterval(() => {
+        notifyNow(settings, true);
+      }, settings.intervalMinutes * 60 * 1000);
+    }
+
+    function persistNotificationDraft() {
+      const previous = loadNotificationSettings() || {};
+      const draft = getNotificationFormSettings();
+      draft.enabled = Boolean(
+        previous.enabled &&
+        notificationSupported() &&
+        Notification.permission === 'granted'
+      );
+      saveNotificationSettings(draft);
+    }
+
+    async function activateNotifications(sendInstantly) {
+      if (!notificationSupported()) {
+        setNotificationStatus('Este navegador nao suporta notificacoes.');
+        return;
+      }
+
+      if (!notificationSecureContext()) {
+        setNotificationStatus('Notificacoes exigem HTTPS ou localhost.');
+        return;
+      }
+
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission !== 'granted') {
+        setNotificationStatus('Permissao negada ou bloqueada.');
+        return;
+      }
+
+      const settings = getNotificationFormSettings();
+      settings.enabled = true;
+      saveNotificationSettings(settings);
+      startNotificationScheduler(settings);
+      setNotificationStatus(`Ativas a cada ${settings.intervalMinutes} minutos.`);
+
+      if (sendInstantly) {
+        notifyNow(settings, true);
+      }
+    }
+
+    function pauseNotifications() {
+      clearNotificationTimer();
+      const settings = loadNotificationSettings() || getNotificationFormSettings();
+      settings.enabled = false;
+      saveNotificationSettings(settings);
+      setNotificationStatus('Notificacoes pausadas.');
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Falha ao ler imagem.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleNotificationIconChange(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 800 * 1024) {
+        setNotificationStatus('Imagem muito grande. Use arquivo ate 800KB.');
+        return;
+      }
+
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        customNotificationIcon = dataUrl;
+        updateNotificationPreview(customNotificationIcon);
+        persistNotificationDraft();
+        setNotificationStatus('Imagem personalizada aplicada.');
+      } catch {
+        setNotificationStatus('Nao foi possivel carregar a imagem.');
+      }
+    }
+
+    async function handleNotificationSoundFileChange(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 500 * 1024) {
+        setNotificationStatus('Audio muito grande. Use arquivo ate 500KB.');
+        notifySoundFileInput.value = '';
+        return;
+      }
+
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        customNotificationSound = dataUrl;
+        notifySoundTypeInput.value = 'custom';
+        persistNotificationDraft();
+        setNotificationStatus('Audio personalizado aplicado.');
+      } catch {
+        setNotificationStatus('Nao foi possivel carregar o audio.');
+      }
+    }
+
+    function resetNotificationIcon() {
+      customNotificationIcon = '';
+      notifyIconInput.value = '';
+      updateNotificationPreview(defaultMoneyIcon);
+      persistNotificationDraft();
+      setNotificationStatus('Icone padrao restaurado.');
+    }
+
+    function handleNotificationSoundTypeChange() {
+      if (notifySoundTypeInput.value === 'custom' && !customNotificationSound) {
+        setNotificationStatus('Selecione um arquivo de audio para usar som personalizado.');
+      }
+      persistNotificationDraft();
+    }
+
+    async function sendTestNotification() {
+      const loaded = loadNotificationSettings() || getNotificationFormSettings();
+      await activateNotifications(false);
+      if (notificationSupported() && Notification.permission === 'granted') {
+        notifyNow({
+          ...loaded,
+          ...getNotificationFormSettings(),
+          icon: customNotificationIcon || loaded.icon || defaultMoneyIcon
+        }, true);
+        setNotificationStatus('Notificacao de teste enviada.');
+      }
+    }
+
+    function initializeNotifications() {
+      const saved = loadNotificationSettings();
+      applyNotificationSettingsToForm(saved);
+
+      if (!notificationSupported()) {
+        setNotificationStatus('Navegador sem suporte a notificacoes.');
+        return;
+      }
+
+      if (!notificationSecureContext()) {
+        setNotificationStatus('Use HTTPS/localhost para ativar notificacoes.');
+        return;
+      }
+
+      if (saved && saved.enabled && Notification.permission === 'granted') {
+        const merged = { ...saved, ...getNotificationFormSettings(), enabled: true };
+        saveNotificationSettings(merged);
+        startNotificationScheduler(merged);
+        setNotificationStatus(`Ativas a cada ${merged.intervalMinutes} minutos.`);
+      } else if (Notification.permission === 'denied') {
+        setNotificationStatus('Permissao bloqueada no navegador.');
+      } else {
+        setNotificationStatus('Notificacoes prontas para ativar.');
+      }
+
+      updateNotificationPreview(customNotificationIcon || (saved && saved.icon) || defaultMoneyIcon);
+    }
+
+    function detectNiche(referenceText) {
+      const text = referenceText.toLowerCase();
+      const found = nicheLibrary.find((niche) => niche.terms.some((term) => text.includes(term)));
+      return found || {
+        key: 'geral',
+        defaultName: 'Oferta Digital',
+        audience: 'pessoas que buscam uma solução prática e confiável',
+        promise: 'avançar mais rápido com clareza e execução',
+        mechanism: 'processo validado com aplicação orientada',
+        pain: 'testar várias soluções sem previsibilidade',
+        proof: 'prova social com clientes/alunos satisfeitos',
+        interests: ['Empreendedorismo', 'Desenvolvimento pessoal', 'Produtividade', 'Marketing digital']
+      };
+    }
+
+    function inferProductName(description, niche) {
+      const firstSentence = cleanText(description).split(/[.!?]/)[0];
+      if (firstSentence.length > 12) {
+        return titleCase(firstSentence.slice(0, 48)).trim();
+      }
+      return niche.defaultName;
+    }
+
+    function inferMechanism(description, niche) {
+      const text = description.toLowerCase();
+      if (text.includes('mentoria')) return 'mentoria orientada com checkpoints de evolução';
+      if (text.includes('comunidade')) return 'comunidade ativa com suporte e cobrança por execução';
+      if (text.includes('aula ao vivo')) return 'aulas ao vivo com aplicação prática no mesmo dia';
+      if (text.includes('suporte')) return 'suporte dedicado para manter consistência';
+      return niche.mechanism;
+    }
+
+    function getInputs() {
+      const description = cleanText(descriptionInput.value);
+      if (description.length < 20) return null;
+
+      const niche = detectNiche(`${description} ${cleanText(productNameInput.value)} ${cleanText(audienceInput.value)}`);
+      const channel = document.querySelector('input[name="channel"]:checked').value;
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      const objective = objectiveInput.value;
+      const budget = Math.max(Number(budgetInput.value) || 120, 20);
+      const ticket = Math.max(Number(ticketInput.value) || 297, 30);
+
+      const productName = cleanText(productNameInput.value) || inferProductName(description, niche);
+      const audience = cleanText(audienceInput.value) || niche.audience;
+      const proof = cleanText(proofInput.value) || niche.proof;
+      const mechanism = inferMechanism(description, niche);
+
+      return {
+        channel,
+        mode,
+        objective,
+        budget,
+        ticket,
+        description,
+        productName,
+        audience,
+        proof,
+        mechanism,
+        niche
+      };
+    }
+
+    function buildOfferAngle(data) {
+      const urgency = randomItem([
+        'Condição atual por tempo limitado.',
+        'Janela de oportunidade curta para novos alunos/clientes.',
+        'Vagas e condições podem mudar sem aviso.'
+      ]);
+
+      if (data.mode === 'black') {
+        return {
+          lead: `⚠️ Ignorar isso hoje pode custar meses de atraso para quem precisa de resultado rápido.`,
+          authority: `Essa abordagem vem sendo usada por players agressivos para dominar atenção e resposta direta.`,
+          curiosity: `Existe um gatilho central no ${data.productName} que faz a pessoa agir antes de pensar duas vezes.`,
+          urgency
+        };
+      }
+
+      return {
+        lead: `Construa resultado real com uma proposta sólida e orientada por execução.`,
+        authority: `${data.proof}.`,
+        curiosity: `Na apresentação você entende os pilares do método e como aplicar no seu contexto.`,
+        urgency
+      };
+    }
+
+    function buildPrimaryCopies(data, angle) {
+      const channelCta = channelData[data.channel].cta;
+      const promise = data.niche.promise;
+      const pain = data.niche.pain;
+
+      if (data.mode === 'black') {
+        return [
+          `COPY A:\n${angle.lead}\n\n${data.productName.toUpperCase()} está fazendo pessoas comuns saírem de "${pain}" para "${promise}" com execução direta.\n${angle.curiosity}\n${channelCta}`,
+          `COPY B:\nVocê já viu quem tenta de tudo e continua no mesmo ponto. O ${data.productName} quebra esse ciclo com ${data.mechanism}.\nA diferença é que aqui o foco é ação, não teoria.\n👉 Entre agora antes que mudem as condições.`,
+          `COPY C:\nPare de adiar. Cada semana sem método custa tempo e dinheiro.\nCom ${data.productName}, você aplica um roteiro claro para ${promise}.\n⏳ ${angle.urgency}\n${channelCta}`
+        ];
+      }
+
+      return [
+        `COPY A:\n${data.productName} foi estruturado para ${data.audience} que querem ${promise}.\nCom ${data.mechanism}, você evolui com segurança e clareza.\n${angle.authority}\n${channelCta}`,
+        `COPY B:\nSe você está cansado de "${pain}", essa pode ser a virada mais racional para sua rotina.\nO método combina direção + aplicação prática para gerar progresso mensurável.\n📌 ${angle.urgency}\n${channelCta}`,
+        `COPY C:\n${angle.lead}\nNo ${data.productName}, você aprende o caminho enxuto para ${promise}, sem fórmulas mágicas.\n${angle.curiosity}\n${channelCta}`
+      ];
+    }
+
+    function buildHeadlines(data) {
+      const promise = data.niche.promise;
+      const base = data.productName;
+      const items = data.mode === 'black'
+        ? [
+            `${base}: Resultado em Ritmo Agressivo`,
+            `Saia do Zero e Escale Mais Rápido`,
+            `Método Direto Para ${titleCase(promise)}`,
+            `Acesso Imediato: Condição Limitada`,
+            `Quem Age Primeiro Sai na Frente`,
+            `Pare de Perder Tempo Sem Estratégia`
+          ]
+        : [
+            `${base}: Método Prático e Validado`,
+            `Evolua com Clareza e Execução`,
+            `Plano Objetivo Para ${titleCase(promise)}`,
+            `Aprenda no Seu Ritmo, Com Direção`,
+            `Comece Hoje Com Um Processo Confiável`,
+            `Resultados Consistentes, Sem Aposta`
+          ];
+
+      return items;
+    }
+
+    function buildDescriptions(data) {
+      if (data.mode === 'black') {
+        return [
+          `Oferta intensa para quem quer avanço rápido.`,
+          `Condição por tempo curto para novas entradas.`,
+          `Método agressivo para acelerar decisão.`
+        ];
+      }
+
+      return [
+        `Abordagem profissional com foco em resultado real.`,
+        `Processo validado para evolução consistente.`,
+        `Estratégia clara para reduzir tentativa e erro.`
+      ];
+    }
+
+    function buildCreativeIdeas(data) {
+      const hook1 = data.mode === 'black'
+        ? `Hook 1 (3s): "Se você continuar assim, daqui a 6 meses estará no mesmo ponto."`
+        : `Hook 1 (3s): "Quer um caminho claro para ${data.niche.promise}?"`;
+      const hook2 = data.mode === 'black'
+        ? `Hook 2 (prova): print de resultado + frase "isso aqui não é sorte".`
+        : `Hook 2 (prova): mostrar método em 3 etapas + depoimento curto.`;
+      const hook3 = data.mode === 'black'
+        ? `Hook 3 (quebra): "O erro que te mantém preso é tentar sem estratégia."`
+        : `Hook 3 (educação): "3 ajustes simples que destravam seu resultado."`;
+
+      return [
+        hook1,
+        hook2,
+        hook3,
+        `Roteiro UGC 20-30s: dor real -> mini história -> mecanismo (${data.mechanism}) -> prova -> CTA.`
+      ];
+    }
+
+    function buildTargeting(data) {
+      const interests = data.niche.interests;
+
+      if (data.channel === 'meta') {
+        return [
+          `Conjunto 1 (Frio - Interesses): ${interests.slice(0, 2).join(' + ')}.`,
+          `Conjunto 2 (Frio - Interesses 2): ${interests.slice(2).join(' + ')}.`,
+          `Conjunto 3 (Quente): Engajados Instagram/Facebook 30 dias + visitantes da página.`,
+          `Escala: Lookalike 1% de leads/compradores assim que atingir volume mínimo de eventos.`
+        ];
+      }
+
+      if (data.channel === 'tiktok') {
+        return [
+          `Conjunto 1 (Broad): público amplo com otimização por evento final.`,
+          `Conjunto 2 (Interesses): ${interests.slice(0, 3).join(', ')}.`,
+          `Conjunto 3 (Retarget): usuários que assistiram 50%+ dos vídeos e clicaram no perfil.`,
+          `Escala: duplicar criativo vencedor e ampliar orçamento em blocos de 20%.`
+        ];
+      }
+
+      return [
+        `Grupo 1 (Alta intenção): palavras-chave de "comprar", "preço", "curso de".`,
+        `Grupo 2 (Comparação): palavras-chave de "melhor", "funciona", "vale a pena".`,
+        `Grupo 3 (Problema): termos ligados à dor principal (${data.niche.pain}).`,
+        `Escala: aumentar lance em termos com maior taxa de conversão e pausar termos caros sem retorno.`
+      ];
+    }
+
+    function buildTestPlan(data) {
+      const daily = data.budget;
+      const cold = Math.round(daily * 0.65);
+      const warm = Math.round(daily * 0.25);
+      const retarget = Math.max(daily - cold - warm, 0);
+      const breakEvenCpa = (data.ticket * 0.35).toFixed(2);
+
+      return [
+        `Dia 1-2: subir 3 variações de copy + 3 criativos; foco em CTR e custo por clique.`,
+        `Dia 3-4: pausar anúncios abaixo da média e concentrar verba nos 2 melhores.`,
+        `Dia 5-7: escalar gradualmente (+20% ao dia) no conjunto vencedor e ativar remarketing forte.`,
+        `Distribuição diária sugerida: R$ ${cold} topo de funil | R$ ${warm} meio de funil | R$ ${retarget} remarketing.`,
+        `CPA de equilíbrio estimado: até R$ ${breakEvenCpa} por conversão (ajuste conforme margem real).`
+      ];
+    }
+
+    function buildCampaignText(data) {
+      const angle = buildOfferAngle(data);
+      const copies = buildPrimaryCopies(data, angle);
+      const headlines = buildHeadlines(data);
+      const descriptions = buildDescriptions(data);
+      const creatives = buildCreativeIdeas(data);
+      const targeting = buildTargeting(data);
+      const testPlan = buildTestPlan(data);
+      const channelInfo = channelData[data.channel];
+      const objectiveLabel = objectiveInput.options[objectiveInput.selectedIndex].text;
+      const riskText = data.mode === 'black'
+        ? 'Risco de reprovação maior na plataforma. Tenha versão White Hat como backup.'
+        : 'Conformidade mais alta com políticas de anúncio e maior estabilidade de conta.';
+      const authorityCount = randomInt(120, 980);
+
+      return [
+        `CAMPANHA PRONTA PARA EXECUÇÃO`,
+        `Canal: ${channelInfo.label}`,
+        `Modo: ${data.mode === 'black' ? 'Black Hat (Agressivo)' : 'White Hat (Profissional)'}`,
+        `Objetivo: ${objectiveLabel}`,
+        `Produto: ${data.productName}`,
+        `Público-alvo: ${data.audience}`,
+        ``,
+        `1) POSICIONAMENTO`,
+        `Promessa central: ${data.niche.promise}.`,
+        `Mecanismo: ${data.mechanism}.`,
+        `Ângulo de curiosidade: ${angle.curiosity}`,
+        `Prova sugerida: ${data.proof} + reforço com ${authorityCount} depoimentos/prints ao longo da campanha.`,
+        ``,
+        `2) ESTRUTURA DE CAMPANHA`,
+        `${channelInfo.structure}.`,
+        `Setup recomendado: 1 campanha / 3 conjuntos / 3 anúncios por conjunto (fase inicial).`,
+        `Observação: ${riskText}`,
+        ``,
+        `3) COPIES PRINCIPAIS (A/B/C)`,
+        `${copies[0]}`,
+        ``,
+        `${copies[1]}`,
+        ``,
+        `${copies[2]}`,
+        ``,
+        `4) HEADLINES`,
+        `- ${headlines.join('\n- ')}`,
+        ``,
+        `5) DESCRIÇÕES CURTAS`,
+        `- ${descriptions.join('\n- ')}`,
+        ``,
+        `6) IDEIAS DE CRIATIVO`,
+        `- ${creatives.join('\n- ')}`,
+        ``,
+        `7) SEGMENTAÇÃO RECOMENDADA`,
+        `- ${targeting.join('\n- ')}`,
+        ``,
+        `8) PLANO DE TESTE (7 DIAS)`,
+        `- ${testPlan.join('\n- ')}`,
+        ``,
+        `9) METAS DE KPI (REFERÊNCIA INICIAL)`,
+        `CTR: ${channelInfo.kpi.ctr}`,
+        `CPC: ${channelInfo.kpi.cpc}`,
+        `CPA/CPL: ${channelInfo.kpi.cpa}`,
+        ``,
+        `10) CTA FINAL`,
+        `${channelInfo.cta}`
+      ].join('\n');
+    }
+
+    function updateStatus(text) {
+      statusPill.textContent = text;
+    }
+
+    function generateCampaign() {
+      const data = getInputs();
+      if (!data) {
+        updateStatus('Faltam dados');
+        output.textContent = 'Descreva melhor o produto/serviço (mínimo de 20 caracteres) para gerar uma campanha completa e útil.';
+        return;
+      }
+
+      const text = buildCampaignText(data);
+      output.textContent = text;
+      updateStatus(`Gerado para ${channelData[data.channel].label}`);
+    }
+
+    function applyMetaAggressivePreset() {
+      document.querySelector('input[name="channel"][value="meta"]').checked = true;
+      document.querySelector('input[name="mode"][value="black"]').checked = true;
+      objectiveInput.value = 'conversoes';
+      budgetInput.value = 150;
+      ticketInput.value = 297;
+      updateChipStates(channelContainer);
+      updateChipStates(modeContainer);
+      updateStatus('Preset aplicado');
+    }
+
+    async function copyResult() {
+      const text = output.innerText.trim();
+      if (!text || text.startsWith('Preencha os campos')) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        updateStatus('Planejamento copiado');
+        copyBtn.textContent = 'Copiado!';
+        setTimeout(() => {
+          copyBtn.textContent = 'Copiar Planejamento';
+        }, 1200);
+      } catch {
+        updateStatus('Falha ao copiar');
+      }
+    }
+
+    bindChipGroup(channelContainer);
+    bindChipGroup(modeContainer);
+    initializeTheme();
+    initializeNotifications();
+
+    generateBtn.addEventListener('click', generateCampaign);
+    variationBtn.addEventListener('click', generateCampaign);
+    presetBtn.addEventListener('click', applyMetaAggressivePreset);
+    copyBtn.addEventListener('click', copyResult);
+    themeToggleBtn.addEventListener('click', toggleTheme);
+    enableNotifyBtn.addEventListener('click', () => activateNotifications(true));
+    testNotifyBtn.addEventListener('click', sendTestNotification);
+    stopNotifyBtn.addEventListener('click', pauseNotifications);
+    notifyIconInput.addEventListener('change', handleNotificationIconChange);
+    notifySoundFileInput.addEventListener('change', handleNotificationSoundFileChange);
+    resetNotifyIconBtn.addEventListener('click', resetNotificationIcon);
+    notifySoundTypeInput.addEventListener('change', handleNotificationSoundTypeChange);
+    notifyVolumeInput.addEventListener('input', () => {
+      updateNotifyVolumeLabel();
+      persistNotificationDraft();
+    });
+    notifyVolumeInput.addEventListener('change', persistNotificationDraft);
+
+    [notifyTitleInput, notifyMessageInput, notifyIntervalInput, notifyClickUrlInput].forEach((field) => {
+      field.addEventListener('input', persistNotificationDraft);
+      field.addEventListener('change', persistNotificationDraft);
+    });
+  </script>
+</body>
+</html>
