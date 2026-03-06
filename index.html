@@ -1,8 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Campanha Certeira">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-money.svg">
   <title>Campanha Certeira | Gerador de Anúncios</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -380,6 +386,16 @@
       background: #cfd9e6;
     }
 
+    #iosGuideBtn {
+      background: #dbeafe;
+      color: #1e3a8a;
+      border: 1px solid #bfdbfe;
+    }
+
+    #iosGuideBtn:hover {
+      background: #bfdbfe;
+    }
+
     .hint {
       margin-top: 9px;
       color: var(--muted);
@@ -602,14 +618,16 @@
 
     body[data-theme="dark"] #presetBtn,
     body[data-theme="dark"] #copyBtn,
-    body[data-theme="dark"] #resetNotifyIconBtn {
+    body[data-theme="dark"] #resetNotifyIconBtn,
+    body[data-theme="dark"] #iosGuideBtn {
       background: #1e293b;
       color: #e2e8f0;
     }
 
     body[data-theme="dark"] #presetBtn:hover,
     body[data-theme="dark"] #copyBtn:hover,
-    body[data-theme="dark"] #resetNotifyIconBtn:hover {
+    body[data-theme="dark"] #resetNotifyIconBtn:hover,
+    body[data-theme="dark"] #iosGuideBtn:hover {
       background: #334155;
     }
 
@@ -836,8 +854,11 @@
             <button id="testNotifyBtn" type="button">Testar notificação agora</button>
             <button id="stopNotifyBtn" type="button">Pausar notificações</button>
             <button id="resetNotifyIconBtn" type="button">Usar ícone padrão de dinheiro</button>
+            <button id="iosGuideBtn" type="button">Como ativar push no iPhone</button>
           </div>
-
+          <p class="hint" id="notifyCapabilityHint">
+            Verificando compatibilidade de push neste navegador...
+          </p>
           <p class="hint">
             Dica: no iPhone, o push web pode exigir app na Tela de Início. Se não liberar push, o modo compatível continua funcionando com alerta dentro da página.
           </p>
@@ -910,6 +931,8 @@
     const testNotifyBtn = document.getElementById('testNotifyBtn');
     const stopNotifyBtn = document.getElementById('stopNotifyBtn');
     const resetNotifyIconBtn = document.getElementById('resetNotifyIconBtn');
+    const iosGuideBtn = document.getElementById('iosGuideBtn');
+    const notifyCapabilityHint = document.getElementById('notifyCapabilityHint');
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     const themeToggleIcon = document.getElementById('themeToggleIcon');
     const themeToggleLabel = document.getElementById('themeToggleLabel');
@@ -944,6 +967,7 @@
     let customNotificationSound = '';
     let notificationAudioContext = null;
     let inAppReminderTimer = null;
+    let serviceWorkerRegistration = null;
 
     const channelData = {
       meta: {
@@ -1127,12 +1151,92 @@
       return iOSByUa || iPadDesktopMode;
     }
 
+    function standaloneModeEnabled() {
+      const mediaStandalone = typeof window.matchMedia === 'function'
+        && window.matchMedia('(display-mode: standalone)').matches;
+      const iosStandalone = window.navigator.standalone === true;
+      return mediaStandalone || iosStandalone;
+    }
+
+    function pushApiSupported() {
+      return typeof window !== 'undefined'
+        && 'PushManager' in window
+        && 'serviceWorker' in navigator;
+    }
+
+    function iosPushRequirementsMet() {
+      if (!isIOSDevice()) return true;
+      return standaloneModeEnabled();
+    }
+
     function pushNotificationsReady() {
-      return notificationSupported() && notificationSecureContext() && Notification.permission === 'granted';
+      return notificationSupported()
+        && notificationSecureContext()
+        && pushApiSupported()
+        && iosPushRequirementsMet()
+        && Notification.permission === 'granted';
     }
 
     function resolveReminderMode() {
       return pushNotificationsReady() ? 'push' : 'inapp';
+    }
+
+    function updateNotificationCapabilityHint() {
+      if (!notifyCapabilityHint) return;
+
+      if (!notificationSecureContext()) {
+        notifyCapabilityHint.textContent = 'Push exige HTTPS ou localhost. Sem isso, o app usa lembrete interno.';
+        return;
+      }
+
+      if (isIOSDevice() && !standaloneModeEnabled()) {
+        notifyCapabilityHint.textContent = 'No iPhone: adicione este app na Tela de Início para o Safari liberar o pedido de permissão push.';
+        return;
+      }
+
+      if (!pushApiSupported()) {
+        notifyCapabilityHint.textContent = 'Este navegador não expõe Push API completa. O app continuará com modo compatível.';
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
+        notifyCapabilityHint.textContent = 'Permissão de notificações bloqueada no navegador. Libere nas configurações.';
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        notifyCapabilityHint.textContent = 'Push disponível neste navegador.';
+        return;
+      }
+
+      notifyCapabilityHint.textContent = 'Push disponível: toque em ativar para solicitar permissão.';
+    }
+
+    function openIOSPushGuide() {
+      const guide = [
+        'iPhone (Safari) - como liberar push:',
+        '1) Abra o site em HTTPS (nao use arquivo local).',
+        '2) Toque em Compartilhar no Safari.',
+        '3) Escolha "Adicionar a Tela de Inicio".',
+        '4) Abra o app pela Tela de Inicio.',
+        '5) Toque em "Ativar notificacoes automaticas".',
+        '6) Quando aparecer, permita notificacoes.',
+        '7) Se nao aparecer, confira Ajustes > Notificacoes > Campanha Certeira.'
+      ].join('\n');
+      window.alert(guide);
+    }
+
+    async function registerNotificationServiceWorker() {
+      if (!notificationSecureContext() || !pushApiSupported()) return null;
+      if (serviceWorkerRegistration) return serviceWorkerRegistration;
+
+      try {
+        serviceWorkerRegistration = await navigator.serviceWorker.register('./sw.js');
+        await navigator.serviceWorker.ready;
+        return serviceWorkerRegistration;
+      } catch {
+        return null;
+      }
     }
 
     function normalizeClickUrl(rawValue) {
@@ -1346,7 +1450,7 @@
     }
 
     function notifyNow(settings, includeRandomLine) {
-      if (!notificationSupported() || Notification.permission !== 'granted') return false;
+      if (!pushNotificationsReady()) return false;
 
       const body = includeRandomLine
         ? `${settings.message} ${getMotivationalLine()}`
@@ -1354,14 +1458,38 @@
 
       void playNotificationSound(settings);
 
-      const notification = new Notification(settings.title, {
+      const options = {
         body: body.trim(),
         icon: settings.icon || defaultMoneyIcon,
         badge: settings.icon || defaultMoneyIcon,
         tag: 'campanha-certeira-motivation',
         renotify: true,
         vibrate: [150, 60, 120]
-      });
+      };
+
+      if (serviceWorkerRegistration && typeof serviceWorkerRegistration.showNotification === 'function') {
+        serviceWorkerRegistration.showNotification(settings.title, options);
+        return true;
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready
+          .then((reg) => {
+            serviceWorkerRegistration = reg;
+            return reg.showNotification(settings.title, options);
+          })
+          .catch(() => {
+            const fallbackNotification = new Notification(settings.title, options);
+            fallbackNotification.onclick = () => {
+              window.focus();
+              if (settings.clickUrl) window.location.href = settings.clickUrl;
+              fallbackNotification.close();
+            };
+          });
+        return true;
+      }
+
+      const notification = new Notification(settings.title, options);
 
       notification.onclick = () => {
         window.focus();
@@ -1398,8 +1526,11 @@
     async function activateNotifications(sendInstantly) {
       const settings = getNotificationFormSettings();
       let reminderMode = 'inapp';
+      const canAttemptPush = notificationSupported() && notificationSecureContext() && pushApiSupported();
+      const iosNeedsStandalone = isIOSDevice() && !standaloneModeEnabled();
 
-      if (notificationSupported() && notificationSecureContext()) {
+      if (canAttemptPush && !iosNeedsStandalone) {
+        await registerNotificationServiceWorker();
         let permission = Notification.permission;
         if (permission === 'default') {
           permission = await Notification.requestPermission();
@@ -1416,11 +1547,14 @@
 
       if (reminderMode === 'push') {
         setNotificationStatus(`Push ativo a cada ${settings.intervalMinutes} minutos.`);
+      } else if (iosNeedsStandalone) {
+        setNotificationStatus('No iPhone Safari, abra pela Tela de Inicio para liberar o popup de permissao push.');
       } else if (isIOSDevice()) {
         setNotificationStatus('Modo iPhone ativo: lembrete no app. Para push, instale na Tela de Inicio e permita notificacoes.');
       } else {
         setNotificationStatus(`Modo compativel ativo a cada ${settings.intervalMinutes} minutos (lembrete dentro da pagina).`);
       }
+      updateNotificationCapabilityHint();
 
       if (sendInstantly) {
         dispatchReminder(settings, true);
@@ -1522,6 +1656,11 @@
     function initializeNotifications() {
       const saved = loadNotificationSettings();
       applyNotificationSettingsToForm(saved);
+      updateNotificationCapabilityHint();
+
+      if (notificationSecureContext() && pushApiSupported() && (!isIOSDevice() || standaloneModeEnabled())) {
+        void registerNotificationServiceWorker();
+      }
 
       const runtimeMode = resolveReminderMode();
       if (saved && saved.enabled) {
@@ -1535,6 +1674,8 @@
         startNotificationScheduler(merged);
         if (runtimeMode === 'push') {
           setNotificationStatus(`Push ativo a cada ${merged.intervalMinutes} minutos.`);
+        } else if (isIOSDevice() && !standaloneModeEnabled()) {
+          setNotificationStatus('iPhone Safari detectado fora da Tela de Inicio. Push exige abrir o app instalado.');
         } else if (isIOSDevice()) {
           setNotificationStatus('Modo iPhone ativo: lembrete no app. Para push, use Tela de Inicio + permissao.');
         } else {
@@ -1542,6 +1683,8 @@
         }
       } else if (runtimeMode === 'push') {
         setNotificationStatus('Notificacoes push prontas para ativar.');
+      } else if (isIOSDevice() && !standaloneModeEnabled()) {
+        setNotificationStatus('No iPhone Safari, use "Adicionar a Tela de Inicio" para o push ficar disponivel.');
       } else if (isIOSDevice()) {
         setNotificationStatus('iPhone detectado: modo compativel pronto (lembrete dentro da pagina).');
       } else {
@@ -1888,6 +2031,7 @@
     notifyIconInput.addEventListener('change', handleNotificationIconChange);
     notifySoundFileInput.addEventListener('change', handleNotificationSoundFileChange);
     resetNotifyIconBtn.addEventListener('click', resetNotificationIcon);
+    iosGuideBtn.addEventListener('click', openIOSPushGuide);
     closeInAppReminderBtn.addEventListener('click', hideInAppReminder);
     notifySoundTypeInput.addEventListener('change', handleNotificationSoundTypeChange);
     notifyVolumeInput.addEventListener('input', () => {
@@ -1900,6 +2044,14 @@
       field.addEventListener('input', persistNotificationDraft);
       field.addEventListener('change', persistNotificationDraft);
     });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        updateNotificationCapabilityHint();
+      }
+    });
+    window.addEventListener('appinstalled', updateNotificationCapabilityHint);
   </script>
 </body>
 </html>
+
